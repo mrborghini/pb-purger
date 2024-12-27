@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"pb-purger/config"
 	"pb-purger/pb"
 	"strings"
@@ -46,6 +47,13 @@ func handleUpdatedEntries(searched pb.ListSearch, config config.Collection, pb *
 
 func run() {
 	entries := config.Read("config.json")
+	lowestSleepingTime := config.GetLowestSleepingTime(entries)
+
+	if lowestSleepingTime == 0 {
+		fmt.Println("deletionTimeSeconds must be set to a value greater than 0")
+		os.Exit(1)
+	}
+
 	for _, entry := range entries {
 		pb := pb.NewPB(entry.PBUrl, entry.PBUsername, entry.PBPassword, entry.AccountCollection)
 		if pb.Username != "" || pb.Password != "" {
@@ -62,7 +70,7 @@ func run() {
 	}
 
 	if sleepingTime == 0 {
-		sleepingTime = 60
+		sleepingTime = int64(lowestSleepingTime)
 	}
 	fmt.Printf("Sleeping for %d seconds\n", sleepingTime)
 	time.Sleep(time.Duration(sleepingTime) * time.Second)

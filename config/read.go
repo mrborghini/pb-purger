@@ -33,3 +33,15 @@ func Read(filePath string) []Entry {
 
 	return cfg
 }
+
+func GetLowestSleepingTime(entries []Entry) int {
+	lowestSleepingTime := 0
+	for _, entry := range entries {
+		for _, collection := range entry.Collections {
+			if lowestSleepingTime == 0 || collection.DeletionTimeSeconds < lowestSleepingTime {
+				lowestSleepingTime = collection.DeletionTimeSeconds
+			}
+		}
+	}
+	return lowestSleepingTime
+}
