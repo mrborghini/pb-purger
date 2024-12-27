@@ -86,7 +86,6 @@ func (pb *PB) Login() error {
 
 func (pb *PB) RetrieveLastUpdated(collection string) ListSearch {
 	apiUrl := fmt.Sprintf("%s/api/collections/%s/records?perPage=10000", pb.Url, collection)
-	fmt.Println(apiUrl)
 
 	req, err := http.NewRequest("GET", apiUrl, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", pb.Token))
@@ -121,4 +120,22 @@ func (pb *PB) RetrieveLastUpdated(collection string) ListSearch {
 	}
 
 	return response
+}
+
+func (pb *PB) Delete(id string, collection string) bool {
+	apiUrl := fmt.Sprintf("%s/api/collections/%s/records/%s", pb.Url, collection, id)
+	req, err := http.NewRequest("DELETE", apiUrl, nil)
+	if err != nil {
+		return false
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", pb.Token))
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return false
+	}
+	defer resp.Body.Close()
+
+	return resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent
 }

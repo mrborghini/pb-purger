@@ -16,7 +16,7 @@ func checkSleepingTime(timeLeft int64) {
 	}
 }
 
-func handleUpdatedEntries(searched pb.ListSearch, config config.Collection) {
+func handleUpdatedEntries(searched pb.ListSearch, config config.Collection, pb *pb.PB) {
 	for _, entry := range searched.Items {
 		normalizedTimestamp := strings.Replace(entry.Updated, " ", "T", 1)
 		timestamp, err := time.Parse(time.RFC3339, normalizedTimestamp)
@@ -35,7 +35,12 @@ func handleUpdatedEntries(searched pb.ListSearch, config config.Collection) {
 			checkSleepingTime(int64(config.DeletionTimeSeconds) - timePassed)
 			continue
 		}
-		fmt.Printf("ID: %s, Updated: %d\n", entry.Id, unix)
+		success := pb.Delete(entry.Id, config.Name)
+		if success {
+			fmt.Printf("Deleted entry from %s with ID: %s\n", config.Name, entry.Id)
+			continue
+		}
+		fmt.Printf("Failed to delete entry from %s with ID: %s\n", config.Name, entry.Id)
 	}
 }
 
@@ -52,7 +57,7 @@ func run() {
 
 		for _, collection := range entry.Collections {
 			updated := pb.RetrieveLastUpdated(collection.Name)
-			handleUpdatedEntries(updated, collection)
+			handleUpdatedEntries(updated, collection, pb)
 		}
 	}
 
