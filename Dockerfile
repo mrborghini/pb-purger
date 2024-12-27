@@ -4,6 +4,9 @@ WORKDIR /usr/src/app
 
 COPY . .
 
+# Prevent image errors
+RUN if [ ! -f config.json ]; then cp config_example.json config.json; fi
+
 RUN go build -v -ldflags "-s -w"
 
 FROM alpine AS runner

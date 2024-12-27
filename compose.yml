@@ -3,3 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    volumes:
+      - pb-purger-volume:/usr/src/app
+
+volumes:
+  pb-purger-volume:

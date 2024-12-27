@@ -40,3 +40,23 @@ This application purges old entries inside of [PocketBase](https://pocketbase.io
 ```
 
 You can customize it easily in this json format.
+
+## Setup
+
+```bash
+cp config_example.json config.json
+```
+
+This step is always required.
+
+### Docker
+
+```bash
+docker compose up -d
+```
+
+### Native
+
+```bash
+./start.sh
+```
