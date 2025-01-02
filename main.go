@@ -9,8 +9,5 @@ func main() {
 	log := utils.NewLogger("Main")
 	log.Info("Starting purger")
 	// Start the purger
-	for {
-		purger := purger.NewPurger()
-		purger.Run()
-	}
+	purger.Start()
 }

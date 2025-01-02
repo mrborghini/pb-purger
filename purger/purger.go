@@ -15,7 +15,14 @@ type Purger struct {
 	sleepingTime int64
 }
 
-func NewPurger() *Purger {
+func Start() {
+	purger := newPurger()
+	for {
+		purger.Run()
+	}
+}
+
+func newPurger() *Purger {
 	return &Purger{
 		log:          utils.NewLogger("Purger"),
 		sleepingTime: 0,
