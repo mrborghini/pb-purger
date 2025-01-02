@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-
-
 type Logger struct {
 	typeName string
 }
