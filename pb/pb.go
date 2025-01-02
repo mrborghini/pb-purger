@@ -90,32 +90,27 @@ func (pb *PB) RetrieveLastUpdated(collection string) ListSearch {
 	req, err := http.NewRequest("GET", apiUrl, nil)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", pb.Token))
 	if err != nil {
-		fmt.Printf("Failed to create request: %s", err)
 		return ListSearch{}
 	}
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Printf("Failed to retrieve last updated: %s", err)
 		return ListSearch{}
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Failed to retrieve last updated: %s", resp.Status)
 		return ListSearch{}
 	}
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Failed to read response: %s", err)
 		return ListSearch{}
 	}
 
 	var response ListSearch
 	err = json.Unmarshal(bodyBytes, &response)
 	if err != nil {
-		fmt.Printf("Failed to unmarshal response: %s", err)
 		return ListSearch{}
 	}
 

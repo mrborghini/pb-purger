@@ -2,27 +2,38 @@ package purger
 
 import (
 	"fmt"
-	"strings"
-	"time"
 	"os"
 	"pb-purger/config"
 	"pb-purger/pb"
+	"pb-purger/utils"
+	"strings"
+	"time"
 )
 
-var sleepingTime int64 = 0
+type Purger struct {
+	log          *utils.Logger
+	sleepingTime int64
+}
 
-func checkSleepingTime(timeLeft int64) {
-	if sleepingTime == 0 || timeLeft < sleepingTime {
-		sleepingTime = timeLeft
+func NewPurger() *Purger {
+	return &Purger{
+		log:          utils.NewLogger("Purger"),
+		sleepingTime: 0,
 	}
 }
 
-func handleUpdatedEntries(searched pb.ListSearch, config config.Collection, pb *pb.PB) {
+func (p *Purger) checkSleepingTime(timeLeft int64) {
+	if p.sleepingTime == 0 || timeLeft < p.sleepingTime {
+		p.sleepingTime = timeLeft
+	}
+}
+
+func (p *Purger) handleUpdatedEntries(searched pb.ListSearch, config config.Collection, pb *pb.PB) {
 	for _, entry := range searched.Items {
 		normalizedTimestamp := strings.Replace(entry.Updated, " ", "T", 1)
 		timestamp, err := time.Parse(time.RFC3339, normalizedTimestamp)
 		if err != nil {
-			fmt.Printf("Failed to convert updated time to Unix timestamp: %s\n", err)
+			p.log.Warning(fmt.Sprintf("Failed to convert updated time to Unix timestamp: %s", err))
 			continue
 		}
 		unix := timestamp.Unix()
@@ -33,25 +44,25 @@ func handleUpdatedEntries(searched pb.ListSearch, config config.Collection, pb *
 		}
 
 		if timePassed < int64(config.DeletionTimeSeconds) {
-			checkSleepingTime(int64(config.DeletionTimeSeconds) - timePassed)
+			p.checkSleepingTime(int64(config.DeletionTimeSeconds) - timePassed)
 			continue
 		}
 		success := pb.Delete(entry.Id, config.Name)
 		if success {
-			fmt.Printf("Deleted entry from %s with ID: %s\n", config.Name, entry.Id)
+			p.log.Info(fmt.Sprintf("Deleted entry from %s with ID: %s", config.Name, entry.Id))
 			continue
 		}
-		fmt.Printf("Failed to delete entry from %s with ID: %s\n", config.Name, entry.Id)
+		p.log.Error(fmt.Sprintf("Failed to delete entry from %s with ID: %s", config.Name, entry.Id))
 	}
 }
 
 // Initialize the purger
-func Run() {
+func (p *Purger) Run() {
 	entries := config.Read("config.json")
 	lowestSleepingTime := config.GetLowestSleepingTime(entries)
 
 	if lowestSleepingTime == 0 {
-		fmt.Println("deletionTimeSeconds must be set to a value greater than 0")
+		p.log.Error("deletionTimeSeconds must be set to a value greater than 0")
 		os.Exit(1)
 	}
 
@@ -60,20 +71,20 @@ func Run() {
 		if pb.Username != "" || pb.Password != "" {
 			err := pb.Login()
 			if err != nil {
-				fmt.Printf("Failed to login to PB: %s", err)
+				p.log.Error(fmt.Sprintf("Failed to login to PB: %s", err))
 			}
 		}
 
 		for _, collection := range entry.Collections {
 			updated := pb.RetrieveLastUpdated(collection.Name)
-			handleUpdatedEntries(updated, collection, pb)
+			p.handleUpdatedEntries(updated, collection, pb)
 		}
 	}
 
-	if sleepingTime == 0 || sleepingTime > int64(lowestSleepingTime) {
-		sleepingTime = int64(lowestSleepingTime)
+	if p.sleepingTime == 0 || p.sleepingTime > int64(lowestSleepingTime) {
+		p.sleepingTime = int64(lowestSleepingTime)
 	}
-	fmt.Printf("Sleeping for %d seconds\n", sleepingTime)
-	time.Sleep(time.Duration(sleepingTime) * time.Second)
-	sleepingTime = 0
+	p.log.Info(fmt.Sprintf("Sleeping for %d seconds", p.sleepingTime))
+	time.Sleep(time.Duration(p.sleepingTime) * time.Second)
+	p.sleepingTime = 0
 }
