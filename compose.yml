@@ -1,5 +1,6 @@
 services:
   pb-purger:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
